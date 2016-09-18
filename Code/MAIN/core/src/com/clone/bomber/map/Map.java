@@ -26,9 +26,11 @@ public class Map implements Serializable {
 	private int squareSize;
 	private int playerNumber=2;
 	private transient TextureManager texManager;
+	private ArrayList<Square> squareBoxes;
 	public Map(int size){
 		texManager = new TextureManager();
 		forRandomSquares= new ArrayList<Square>();
+		squareBoxes = new ArrayList<Square>();
 		this.size=size+2;
 		float temp=(GameClass.viewportHeight/this.size);
 		temp/=10;
@@ -97,25 +99,19 @@ public class Map implements Serializable {
 	}
 	
 	public void update(float delta){
-		for(int i = 0; i < boxes.size(); i++){
+		for(int i = boxes.size()-1; i >= 0; i--){
 			if(boxes.get(i).isDead()){
 				float random = (float) Math.random();
 				if(random<0.33){
-					powerUPs.add(new PowerUP(boxes.get(i).getMySquare(),-1,this));
-					boxes.get(i).getMySquare().setHasPowerUp(true);
+					powerUPs.add(new PowerUP(boxes.get(i).getMySquare(),this));
 				}
 				boxes.remove(i);
 			}
 		}
-		for(int i = 0; i < powerUPs.size(); i++){
+		for(int i = powerUPs.size()-1; i >= 0; i--){
 			powerUPs.get(i).update(delta);
 			if(powerUPs.get(i).isDead()){
 				powerUPs.remove(i);
-			}
-		}
-		for(int i = 0; i < walls.size(); i++){
-			if(walls.get(i).isDead()){
-				walls.remove(i);
 			}
 		}
 	}
@@ -150,11 +146,7 @@ public class Map implements Serializable {
 			}
 		}
 		for(int i = 0; i<walls.size();i++){
-			if(walls.get(i).isDead()){
-				walls.remove(i);
-			} else {
-				rect.add(walls.get(i).getHitbox());
-			}
+			rect.add(walls.get(i).getHitbox());
 		}
 		return rect;
 	}
@@ -182,6 +174,8 @@ public class Map implements Serializable {
 		walls.remove(myWall);	
 	}
 	public void removeBox(Box myBox) {
+		forRandomSquares.add(myBox.getMySquare());
+		squareBoxes.remove(myBox.getMySquare());
 		boxes.remove(myBox);
 	}
 	public void addWall(Wall w) {
@@ -206,11 +200,15 @@ public class Map implements Serializable {
 	public void load() {
 		texManager = new TextureManager();
 		forRandomSquares= new ArrayList<Square>();
+		squareBoxes= new ArrayList<Square>();
 		powerUPs= new ArrayList<PowerUP>();
 		for(Square s : squares){ 
 			s.load();
-			if(!s.isHasWall()||!s.isEmpty()){
+			if(!s.isHasWall()&&!s.isEmpty()&&!s.isHasBox()){
 				forRandomSquares.add(s);
+			}
+			if(s.isHasBox()){
+				squareBoxes.add(s);
 			}
 		}
 		for(int i = boxes.size()-1; i>=0;i--){
@@ -220,8 +218,8 @@ public class Map implements Serializable {
 			walls.get(i).load(this);
 		}
 	}
-	public Square getRandomSquare(boolean withWall) {
-		if(withWall){
+	public Square getRandomSquare(boolean all) {
+		if(all){
 			Random r = new Random();
 			int random =  Math.abs(r.nextInt(size*size)-1);
 			ArrayList<Square> sq = new ArrayList<Square>(Arrays.asList(squares));
@@ -261,6 +259,15 @@ public class Map implements Serializable {
 	public void dispose() {
 		texManager.disposeAll();
 		
+	}
+
+	public Square getRandomWithBox() {
+		ArrayList<Square> temp = new ArrayList<Square>();
+		temp.addAll(squareBoxes);
+		temp.addAll(forRandomSquares);
+		Random r = new Random();
+		int random =  Math.abs(r.nextInt(temp.size())-1);
+		return temp.get(random);
 	}
 
 }

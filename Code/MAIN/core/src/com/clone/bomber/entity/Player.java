@@ -80,14 +80,16 @@ public class Player extends Entity implements InputProcessor, ControllerListener
 	//EFFECTS	
 	private int bombThrows;
 	private int pushPerks;
-	private int negativeEffect=-1;
+	private PowerUPEffects lastEffect;
 	private boolean bombDiarrhea=false;
 	private boolean bombThrow=false;
 	private boolean pushPerk=false;
 	private boolean controllerBoolean;
 	//if the powerup should change the size of the drawn player
 	private boolean growNegativPowerUP;
-	
+	private float NegativPowerUPTimer = 15;
+	private float NegativPowerUPTime = 15;
+
 	//score
 	private int wins=0;
 	private int teamNumber=-1;
@@ -102,8 +104,6 @@ public class Player extends Entity implements InputProcessor, ControllerListener
 	private boolean stopLeft;
 	private boolean stopRight;
 	
-	private boolean alive = true;
-
 	//square -> easy fast fix for teleporting payer out of his own bomb
 	// -> maybe there is better solution but wayne 
 	private Square oldSquare;
@@ -118,8 +118,11 @@ public class Player extends Entity implements InputProcessor, ControllerListener
 	//for deadSounds -> see otherPlayerContact
 	private float soundTimer = 0;
 
+
 	//if the player uses controller to control this character!
 	private Controller myController;
+	private boolean isFalling;
+	private boolean spawnNegativ;
 	
 	/**
 	 * CONSTRUCTOR 
@@ -134,7 +137,7 @@ public class Player extends Entity implements InputProcessor, ControllerListener
 	 */
 	public Player(Square square, int[] controls,Map map,String control, MySound mySound, String charakter, BomberGame bomberGame, int team){
 		this.mySound=mySound;
-		
+		lastEffect = PowerUPEffects.speed;//it does not matter what it is except no negativ
 		this.bomberGame=bomberGame;
 		this.bombTexture=new Texture("res/assets/bomb_" + charakter + ".png");
 		this.size=square.getSize();
@@ -256,6 +259,9 @@ public class Player extends Entity implements InputProcessor, ControllerListener
 		for (int i = 0; i < myBombs.size(); i++) {
 			myBombs.get(i).render(batch);
 		}	
+		if(position.z<0.1){
+			return;
+		}
 		float xoffset=(size-10)/4 + xOffset;
 		if(!dead){
 			if(move.y==1){
@@ -282,9 +288,7 @@ public class Player extends Entity implements InputProcessor, ControllerListener
 					batch.draw(walkLeftAnimation.getKeyFrame(0, true), position.x-xoffset, position.y-yOffset,drawSize/2, drawSize/2, drawSize, drawSize, position.z, position.z, 0);
 				}
 			}
-		} else
-		if(this.position.z==1){
-
+		} else{
 				if(this.lastPressed==0){
 					batch.draw(deadFrames[2], position.x-xoffset, position.y-yOffset,drawSize/2, drawSize/2, drawSize, drawSize, position.z, position.z, 0);
 				}else 
@@ -307,33 +311,30 @@ public class Player extends Entity implements InputProcessor, ControllerListener
 	 * 
 	 */
 	public void setDead(boolean dead) {
+		if(this.dead){
+			return;
+		}
 		if(this.position.z==1){
 		mySound.playDieSound();
 		ArrayList<PowerUP> powers=new ArrayList<PowerUP>();
-			if(negativeEffect==6){
-				powers.add(new PowerUP(this.mySquare,6,map));
-			} else if(negativeEffect==7){
-				powers.add(new PowerUP(this.mySquare,7,map));
-			} else if(negativeEffect==8){
-				this.speed-=1000;
-				powers.add(new PowerUP(this.mySquare,8,map));
+			if(PowerUPEffects.IsNegativEffect(lastEffect)){
+				powers.add(new PowerUP(this.mySquare,map,lastEffect));
 			}
 			int speedUps = (int) ((speed-120 )/ speedBonus);
-
-			for(int i = speedUps; i>0; i--){
-				powers.add(new PowerUP(this.mySquare,1,map));
+			for(int i = 0; i<speedUps; i++){
+				powers.add(new PowerUP(this.mySquare,map,PowerUPEffects.speed));
 			}
-			for(int i = blastRadius-1; i>0; i--){
-				powers.add(new PowerUP(this.mySquare,2,map));
+			for(int i = 0; i<blastRadius-1; i++){
+				powers.add(new PowerUP(this.mySquare,map,PowerUPEffects.blastradius));
 			}
-			for(int i = bomblimit-1; i>0; i--){
-				powers.add(new PowerUP(this.mySquare,3,map));
+			for(int i = 0; i<bomblimit-1; i++){
+				powers.add(new PowerUP(this.mySquare,map,PowerUPEffects.bomb));
 			}
-			for(int i = bombThrows; i>0; i--){
-				powers.add(new PowerUP(this.mySquare,4,map));
+			for(int i = 0; i<bombThrows; i++){
+				powers.add(new PowerUP(this.mySquare,map,PowerUPEffects.throwable));
 			}
-			for(int i = pushPerks; i>0; i--){
-				powers.add(new PowerUP(this.mySquare,5,map));
+			for(int i = 0; i<pushPerks; i++){
+				powers.add(new PowerUP(this.mySquare,map,PowerUPEffects.push));
 			}
 			for(PowerUP p : powers){
 				Square temp= map.getRandomSquare(false);
@@ -359,13 +360,13 @@ public class Player extends Entity implements InputProcessor, ControllerListener
 			}
 			if(myBombs.get(i).isDead()){
 				beams.removeAll(myBombs.get(i).getBeams());
-				myBombs.get(i).getMySquare().setHasBomb(false, null);
+				myBombs.get(i).getMySquare().setHasBomb(null);
 					
 				myBombs.remove(i);
 			}
 		}
 		//effect for negative Effects
-		if(negativeEffect!=-1){
+		if(PowerUPEffects.IsNegativEffect(lastEffect)){
 			if(drawSize <= (originalSize + 10)  && growNegativPowerUP){
 				this.drawSize+=10f*delta;
 			} else
@@ -375,7 +376,12 @@ public class Player extends Entity implements InputProcessor, ControllerListener
 			} else {
 				growNegativPowerUP=true;
 			}
-			
+			NegativPowerUPTimer-=delta;
+			if(NegativPowerUPTimer<=0){
+				lastEffect=PowerUPEffects.speed;
+			}
+		} else {
+			NegativPowerUPTimer = NegativPowerUPTime;
 		}
 		soundTimer-=delta;
 		
@@ -482,14 +488,16 @@ public class Player extends Entity implements InputProcessor, ControllerListener
 		}
 		//if the square where the player stands is empty
 		//fall down and die
-		if(this.mySquare.isEmpty()){
-			if(this.position.z>0.1){
-				mySound.playFallSound();
-				
+		if(this.mySquare.isEmpty()||isFalling){
+			if(!isFalling){
 				this.hitbox.setSize(0);
-				this.position.z-=this.position.z*this.position.z*9.81f*delta;
+				mySound.playFallSound();
+			}
+			isFalling = true;
+			if(this.position.z>0.1){
+				this.position.z-=0.3f*this.position.z*9.81f*delta;
 			} else {
-			this.dead=true;
+			    this.dead=true;
 			}
 		}
 		//reset clipping booleans -> already handle it
@@ -507,7 +515,7 @@ public class Player extends Entity implements InputProcessor, ControllerListener
 			if(!mySquare.isHasBomb()){
 					//create the bomb -> update square and increase placed Bomb Count
 					Bomb b = new Bomb(mySquare,mySquare.getSize(),blastRadius, this, mySound,bombTexture);
-					mySquare.setHasBomb(true, b);
+					mySquare.setHasBomb(b);
 					myBombs.add(b);
 					bombcount++;
 			}
@@ -541,7 +549,7 @@ public class Player extends Entity implements InputProcessor, ControllerListener
 		//if the oldSquare had a bomb (the player placed it there)
 		if(oldSquareHadBomb){
 			//and the player collidies with a bomb
-			if(collideable.toString().contains("Bomb")){
+			if(collideable instanceof Bomb && ((Bomb)collideable).isFlying==false){
 				//check if its the the bomb is in the old place 
 				// -> stands half in it -> ignore the collision
 				if(tempS==oldSquare){
@@ -549,14 +557,12 @@ public class Player extends Entity implements InputProcessor, ControllerListener
 				}
 				//but let the player only walk in the new square
 				if(oldSquare.getNumber()+1==mySquare.getNumber()){
-//					stopLeft=false;
 					stopRight=true;
 					stopUp=true;
 					stopDown=true;
 				} else 
 				if(oldSquare.getNumber()-1==mySquare.getNumber()){
 					stopLeft=true;
-//					stopRight=false;
 					stopUp=true;
 					stopDown=true;
 				} else 
@@ -564,23 +570,19 @@ public class Player extends Entity implements InputProcessor, ControllerListener
 					stopLeft=true;
 					stopRight=true;
 					stopUp=true;
-//					stopDown=false;
 				} else 
 				if(oldSquare.getNumber()+mySquare.getRowSize()==mySquare.getNumber()){
 					stopLeft=true;
 					stopRight=true;
-//					stopUp=false;
 					stopDown=true;
 				}
-			} else {
-				System.out.println("userdata is not a square! Wanted?");
-			}
+			} 
 		}
 		//test for bombs if its flying 
 		if(collideable.toString().contains("Bomb")){
 			if(((Bomb)collideable).isFlying()){
 				//if its flies ignore the collision
-				ignoreCollision=true;
+				return;
 			}
 		}
 		//if not ignore the collision
@@ -747,65 +749,71 @@ public class Player extends Entity implements InputProcessor, ControllerListener
 	/**
 	 * adds a specific PowerUP to the player and resolves its effect
 	 * when NEGATIVE effect on player removes it!
-	 * @param type
+	 * @param myEffect
 	 */
-	public void addPowerUP(int type) {
+	public void addPowerUP(PowerUPEffects myEffect) {
 		//add a PowerUP
 		//play the sound
-		mySound.playPowerUPSound(type);
-		if(negativeEffect!=-1){	
+		mySound.playPowerUPSound(myEffect);
+		if(PowerUPEffects.IsNegativEffect(lastEffect)){	
 			ArrayList<PowerUP> powers=new ArrayList<PowerUP>();
-			if(negativeEffect==6){
+			if(lastEffect==PowerUPEffects.joint){
 				invertControls();
-				powers.add(new PowerUP(this.mySquare,6,map));
 			} else
-			if(negativeEffect==7){
+			if(lastEffect==PowerUPEffects.diarrhea){
 				bombDiarrhea=false;
-				powers.add(new PowerUP(this.mySquare,7,map));
 			} else
-			if(negativeEffect==8){
+			if(lastEffect==PowerUPEffects.superspeed){
 				this.speed-=1000;
-				powers.add(new PowerUP(this.mySquare,8,map));
 			}
-			growNegativPowerUP=false;
-			drawSize=originalSize;
-			negativeEffect=-1;
-			Square temp= map.getRandomSquare(false);
-			powers.get(0).flyToSquare(temp);
-			map.addPowerUps(powers);
+			if(spawnNegativ){
+				powers.add(new PowerUP(this.mySquare,map,lastEffect));
+				growNegativPowerUP=false;
+				drawSize=originalSize;
+				Square temp= map.getRandomSquare(false);
+				powers.get(0).flyToSquare(temp);
+				map.addPowerUps(powers);
+			}
 		}
-		
-		if(type==1){
-			this.speed+=speedBonus;
-		} else
-		if(type==2){
+		lastEffect=myEffect;
+		switch(myEffect){
+		case blastradius:
 			this.blastRadius+=1;
-		} else
-		if(type==3){
+			break;
+		case bomb:
 			this.bomblimit+=1;
-		} else
-		if(type==4){
-			bombThrows++;
-			this.bombThrow=true;
-		} else
-		if(type==5){
+			break;
+		case diarrhea:
+			spawnNegativ = true;
+			bombDiarrhea=true;
+			lastEffect=myEffect;
+			growNegativPowerUP=true;
+			break;
+		case joint:
+			spawnNegativ = true;
+			invertControls();
+			lastEffect=myEffect;
+			growNegativPowerUP=true;
+			break;
+		case push:
 			pushPerks++;
 			this.pushPerk=true;
-		} else
-		if(type==6){
-			invertControls();
-			negativeEffect=type;
-			growNegativPowerUP=true;
-		} else
-		if(type==7){
-			bombDiarrhea=true;
-			negativeEffect=type;
-			growNegativPowerUP=true;
-		} else
-		if(type==8){
+			break;
+		case speed:
+			this.speed+=speedBonus;
+			break;
+		case superspeed:
+			spawnNegativ = true;
 			this.speed+=1000;
-			negativeEffect=type;
+			lastEffect=myEffect;
 			growNegativPowerUP=true;
+			break;
+		case throwable:
+			bombThrows++;
+			this.bombThrow=true;
+			break;
+		default:
+			break;
 		}
 	}
 	/**
@@ -879,24 +887,25 @@ public class Player extends Entity implements InputProcessor, ControllerListener
 	public void addBeamHitboxes(ArrayList<Blastbeam> beams) {
 		this.beams=beams;
 	}
-	public boolean isAlive(){
-		return alive;
-	}
-	public void setAlive(){
-		 alive=false;
-	}
 	/**
 	 * adds negative effect from a other player
 	 * or plays a sound if this player is dead and counter is 0 
 	 * @param otherPlayerNegativeEffect
 	 */
-	public void playerContact(int otherPlayerNegativeEffect) {
-		
+	public void playerContact(PowerUPEffects otherPlayerNegativeEffect) {
+		//if it is dead play sound
 		if(soundTimer<=0 && dead){
 			mySound.playCorpse();
 			soundTimer=1f;
-		} else 
-		if(otherPlayerNegativeEffect!=-1 && negativeEffect==-1){
+			return;
+		}  
+		//when the other has a negativ and this one dont
+		//then do it	
+		if(otherPlayerNegativeEffect.IsNegativ() && lastEffect.IsNegativ()==false){
+			if(otherPlayerNegativeEffect==lastEffect){
+				return;
+			}
+			spawnNegativ = false;
 			this.addPowerUP(otherPlayerNegativeEffect);
 		}
 	}
@@ -922,6 +931,7 @@ public class Player extends Entity implements InputProcessor, ControllerListener
 		myBombs=new ArrayList<Bomb>();
 		setPosition(square);
 		hitbox.setSize(size-10);
+		lastEffect = PowerUPEffects.speed;
 		hitbox.setCenter(position.x,position.y);
 		move=new Vector2();
 		move.setZero();
@@ -930,16 +940,16 @@ public class Player extends Entity implements InputProcessor, ControllerListener
 		stopLeft = false;
 		stopRight = false;
         dead=false;
-        alive=true;
+        isFalling = false;
         stateTime=0;
 	}
 
-	public int getNegativeEffect() {
-		return negativeEffect;
+	public PowerUPEffects getLastEffect() {
+		return lastEffect;
 	}
 
-	public void setNegativeEffect(int negativeEffect) {
-		this.negativeEffect = negativeEffect;
+	public void setNegativeEffect(PowerUPEffects negativeEffect) {
+		this.lastEffect = negativeEffect;
 	}
 
 	public void setController(Controller first) {

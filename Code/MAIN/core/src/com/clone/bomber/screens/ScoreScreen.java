@@ -5,16 +5,11 @@ import java.util.ArrayList;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.InputMultiplexer;
-import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Preferences;
-import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.FitViewport;
@@ -23,26 +18,25 @@ import com.clone.bomber.entity.Player;
 import com.clone.bomber.map.Map;
 import com.clone.bomber.map.MapManager;
 import com.clone.bomber.map.Square;
+import com.clone.bomber.util.MyScreen;
 import com.clone.bomber.util.MySound;
 
-public class ScoreScreen implements Screen,InputProcessor {
-	private GameClass gameClass;
+public class ScoreScreen extends MyScreen {
+	
 	private ArrayList<Player> players;
-	private Stage stage;
-	private Skin skin;
-	private SpriteBatch spriteBatch;
-	private FitViewport viewPort;
-	private OrthographicCamera camera;
 	private Array<String> arraySelection;
+	
 	private Table playerTable;
 	private Table[] teamTable;
 	private Table allTeamsTable;
 	private Image[] playerImage;
 	private boolean won;
+	
 	private FitViewport viewMapPort;
 	private OrthographicCamera mapCamera;
 	private MapManager mapManager;
 	private Map map;
+	
 	private Texture spawnSpot;
 	private Texture randomBox;
 	private Table cupTable;
@@ -51,30 +45,20 @@ public class ScoreScreen implements Screen,InputProcessor {
 	private static String[] teamNames = {"No Team","Gold","Leaf","Blood","Water"};
 	
 	public ScoreScreen(GameClass gameClass){
-		spriteBatch = new SpriteBatch();
 		this.gameClass=gameClass;	
-		camera = new OrthographicCamera(GameClass.viewportWidth,
-				GameClass.viewportHeight);
-		camera.translate(new Vector3(GameClass.viewportWidth / 2,
-				GameClass.viewportHeight / 2, 0));
-		viewPort = new FitViewport(GameClass.viewportWidth,
-				GameClass.viewportHeight, camera);
-		viewPort.apply();	
-		mapCamera =new OrthographicCamera(GameClass.viewportWidth,
-				GameClass.viewportHeight);
+	}
+	
+	@Override
+	public void OnShow(){
 		mapCamera.translate(new Vector3(GameClass.viewportWidth / 2 +100,
 				GameClass.viewportHeight / 2 +100, 0));
 		mapCamera.zoom=1.75f;
 		mapCamera.update();
-		
 		viewMapPort = new FitViewport(GameClass.viewportWidth,
 				GameClass.viewportHeight, mapCamera);
 		viewMapPort.getCamera().position.set(200,200,1.75f);
 		viewMapPort.getCamera().update();
-	    skin = new Skin(Gdx.files.internal("res/gui/uiskin.json"));
 		mapManager=new MapManager();
-		stage = new Stage();
-		stage.setViewport(viewPort);
 		playerTable =new Table(skin);
 		allTeamsTable=new Table(skin);
 		cupTable=new Table(skin);
@@ -296,6 +280,7 @@ public class ScoreScreen implements Screen,InputProcessor {
 	public void dispose() {
 		map.dispose();
 		spriteBatch.dispose();
+		stage.dispose();
 	}
 
 	@Override
@@ -329,7 +314,6 @@ public class ScoreScreen implements Screen,InputProcessor {
 
 	@Override
 	public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-		System.out.println("touch " +  screenX+ screenY + " " + camera.unproject(new Vector3(screenX , screenY,0)));
 		return false;
 	}
 

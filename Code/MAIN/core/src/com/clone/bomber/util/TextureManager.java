@@ -3,6 +3,7 @@ package com.clone.bomber.util;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.clone.bomber.entity.PowerUPEffects;
 
 public class TextureManager {
 	private transient Texture squareGroundTex;
@@ -90,25 +91,30 @@ public class TextureManager {
 		superspeedPowerUPtexture.dispose();
 		suddendeathTexture.dispose();
 	}
-	public Texture getPowerUp(String name) {
-		if(name.contains("speed")){
-			return speedPowerUPtexture;
-		} else if(name.contains("blastradius")){
+	public Texture getPowerUp(PowerUPEffects effect) {
+		switch(effect){
+		case blastradius:
 			return blastradiusPowerUPtexture;
-		} else if(name.contains("bomb")){
+		case bomb:
 			return bombPowerUPtexture;
-		} else if(name.contains("throw")){
-			return throwPowerUPtexture;
-		} else if(name.contains("push")){
-			return pushPowerUPtexture;
-		} else if(name.contains("joint")){
-			return jointPowerUPtexture;
-		} else if(name.contains("diarrhea")){
+		case diarrhea:
 			return diarrheaPowerUPtexture;
-		} else if(name.contains("superspeed")){
+		case joint:
+			return jointPowerUPtexture;
+		case push:
+			return pushPowerUPtexture;
+		case speed:
+			return speedPowerUPtexture;
+		case superspeed:
 			return superspeedPowerUPtexture;
+		case throwable:
+			return throwPowerUPtexture;
+		default:
+			//ERROR NEVER GONNA END UP HERE
+			//BUT IF WE SEE THIS AS AN ERROR WITHOUT CRASH
+			System.out.println(" !ERROR SPRITE NO EFFECT! ");
+			return spawnSpotTexture;
 		}
-		return null;
 	}
 	public Texture getSuddendeath() {
 		return suddendeathTexture;

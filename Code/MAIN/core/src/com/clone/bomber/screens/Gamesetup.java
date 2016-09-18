@@ -4,10 +4,7 @@ import java.util.HashMap;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
-import com.badlogic.gdx.InputMultiplexer;
-import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Preferences;
-import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.controllers.Controller;
 import com.badlogic.gdx.controllers.ControllerAdapter;
 import com.badlogic.gdx.controllers.Controllers;
@@ -17,17 +14,14 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
-import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.List;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.SelectBox;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
@@ -45,12 +39,13 @@ import com.clone.bomber.map.MapManager;
 import com.clone.bomber.map.Square;
 import com.clone.bomber.util.MyChangeListener;
 import com.clone.bomber.util.MyClickListener;
+import com.clone.bomber.util.MyScreen;
+import com.clone.bomber.util.MySelectBox;
 
 
-public class Gamesetup implements Screen, InputProcessor  {
+public class Gamesetup extends MyScreen  {
 	public static final int ID = 3;	
 	private static final int maxNumberPlayer=8;
-	
 	private static final String[] characterNames = {"bsd","tux","snake","spider","dull_blue","dull_green","dull_yellow","dull_red"};
 	private static final String[] controlsNames = {"Keyboard","Controller","App"};
 	private static final String[] teamNames = {"No Team","Gold","Leaf","Blood","Water"};
@@ -63,11 +58,6 @@ public class Gamesetup implements Screen, InputProcessor  {
 	private List<String> list;
 	private ScrollPane mapScrollPane;
 	private MapManager mapManager;
-	private Stage stage;
-	private Skin skin;
-	private FitViewport viewPort;
-	private OrthographicCamera camera;
-	private GameClass gameClass;
 	private Label selectionLabel;
 	private Table[] playerTable;
 	private TextButton setButton;
@@ -113,7 +103,6 @@ public class Gamesetup implements Screen, InputProcessor  {
 	private Texture randomBox;
 	private TextField suddenDeathTimer;
 	private Label suddenDeathTimerDef;
-	private SpriteBatch spriteBatch;
 
 	//for remembering if the controls are to set
 	private String[] playersLastControls;
@@ -123,7 +112,7 @@ public class Gamesetup implements Screen, InputProcessor  {
 	}
 	
 	@Override
-	public void show() {	
+	public void OnShow() {	
 		prefs = Gdx.app.getPreferences("clonebomber");
 		hashMap = new HashMap<Integer, Array<String>>();
 		
@@ -139,16 +128,16 @@ public class Gamesetup implements Screen, InputProcessor  {
 				GameClass.viewportHeight / 2  - 200,1.75f);
 		viewMapPort.getCamera().update();
 		
-		camera = new OrthographicCamera(GameClass.viewportWidth,
-				GameClass.viewportHeight);
-		camera.translate(new Vector3(GameClass.viewportWidth / 2,
-				GameClass.viewportHeight / 2, 0));
-		viewPort = new FitViewport(GameClass.viewportWidth,
-				GameClass.viewportHeight, camera);
-		viewPort.apply();
-		
-		viewPort.setCamera(camera);
-		viewPort.apply();
+//		camera = new OrthographicCamera(GameClass.viewportWidth,
+//				GameClass.viewportHeight);
+//		camera.translate(new Vector3(GameClass.viewportWidth / 2,
+//				GameClass.viewportHeight / 2, 0));
+//		viewPort = new FitViewport(GameClass.viewportWidth,
+//				GameClass.viewportHeight, camera);
+//		viewPort.apply();
+//		
+//		viewPort.setCamera(camera);
+//		viewPort.apply();
 		
 		
 		FileHandle dirHandle = Gdx.files.internal("./maps/");
@@ -156,8 +145,6 @@ public class Gamesetup implements Screen, InputProcessor  {
 	    mapNames=new Array<String>();
 	    getDirectoryHandles(dirHandle, handles);
 	    
-	    stage=new Stage();
-	    skin = new Skin(Gdx.files.internal("res/gui/uiskin.json"));
 	    list =new List<String>(skin);
 	    mapManager= new MapManager(map);
 	    
@@ -201,20 +188,15 @@ public class Gamesetup implements Screen, InputProcessor  {
 	    stage.addActor(selectionLabel);
 	    stage.addActor(mapScrollPane);
 	    
-	    //stage stuff
-		stage.setViewport(viewPort);
-		stage.getCamera().update();
-		stage.getViewport().apply();
-		stage.getViewport().update(Gdx.graphics.getWidth(),Gdx.graphics.getHeight(),true); 
+//	    //stage stuff
+//		stage.setViewport(viewPort);
+//		stage.getCamera().update();
+//		stage.getViewport().apply();
+//		stage.getViewport().update(Gdx.graphics.getWidth(),Gdx.graphics.getHeight(),true); 
 		
 		spawnSpot=map.getTexManager().getSpawnSpotTexture();
 		randomBox=map.getTexManager().getRandomBoxTexture();
 		
-		//input stuff
-		InputMultiplexer inputMultiplexer = new InputMultiplexer();
-		inputMultiplexer.addProcessor(stage);
-		inputMultiplexer.addProcessor(this);
-		Gdx.input.setInputProcessor(inputMultiplexer);
 		
 	}
 
@@ -349,6 +331,7 @@ public class Gamesetup implements Screen, InputProcessor  {
   				}
   				prefs.putInteger("Wins", Integer.valueOf(winNumberLabel.getText().toString()));
   				prefs.putInteger("Suddendeath-Timer", Integer.valueOf(suddenDeathTimer.getText()));
+  				System.out.println("list.getSelection().toArray()" + list.getSelection().toArray().size);
   				gameClass.setGame(true,list.getSelection().toArray(),Integer.valueOf(playerNumberLabel.getText().toString()), null);
   				} else {
   					teamDialog = new Dialog("Don´t be silly! Dont be all on one Team!",skin);
@@ -938,7 +921,6 @@ public class Gamesetup implements Screen, InputProcessor  {
 
 	@Override
 	public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-		System.out.println(screenX + " " + screenY);
 		stage.setKeyboardFocus(null);
 		return false;
 	}

@@ -13,6 +13,7 @@ public class MyServerListener extends Listener {
 	private Network network;
 	private boolean started;
 	private Hashtable<String,Integer> hash;
+	
 	public MyServerListener(Network network) {
 		this.network=network;
 		hash= new Hashtable<String,Integer>();

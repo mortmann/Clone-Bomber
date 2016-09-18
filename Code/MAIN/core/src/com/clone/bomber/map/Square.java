@@ -177,9 +177,9 @@ public class Square implements Serializable{
 	public boolean isHasBomb() {
 		return hasBomb;
 	}
-	public void setHasBomb(boolean hasBomb, Bomb bomb) {
+	public void setHasBomb(Bomb bomb) {
 		this.setMyBomb(bomb);
-		this.hasBomb = hasBomb;
+		this.hasBomb = bomb!=null;
 	}
 	public Vector2 getCenter() {
 		return center;
@@ -313,6 +313,7 @@ public class Square implements Serializable{
 			this.setEmpty(b);
 		}
 	}
+
 	public void getHit(){
 		if(hasBox){
 			hasBox=false;
@@ -324,8 +325,8 @@ public class Square implements Serializable{
 		} else {
 			map.removeRandomSquare(this);
 			this.empty=true;
-			groundRegName="res/maptexture/empty_TEMP.png";
-			groundTex = new Texture(groundRegName);
+//			groundRegName="res/maptexture/empty_TEMP.png";
+//			groundTex = new Texture(groundRegName);
 			
 		}
 		

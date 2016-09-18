@@ -3,6 +3,7 @@ package com.clone.bomber.util;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.audio.Sound;
+import com.clone.bomber.entity.PowerUPEffects;
 
 public class MySound {
 	private static final String pathSound = "res/sound/";
@@ -61,16 +62,22 @@ public class MySound {
 			sound[10].play(volume);
 		}
 	}
-	public void playPowerUPSound(int type){
-		if(type==6){
-			sound[4].play(volume);
-		} else if(type==7){
+	public void playPowerUPSound(PowerUPEffects myEffect){
+		switch(myEffect){
+		case diarrhea:
 			sound[5].play(volume);
-		} else if(type==8){
+			break;
+		case joint:
+			sound[4].play(volume);
+			break;
+		case superspeed:
 			sound[6].play(volume);
-		} else {
+			break;
+		default:
 			sound[7].play(volume);
+			break;
 		}
+		
 	}
 	public void playBombSound(int i){
 		if(i==1){

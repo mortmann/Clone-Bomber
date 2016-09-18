@@ -75,10 +75,13 @@ public class Blastbeam extends Entity{
 			hitbox.setSize(this.size-7,this.size/2);
 			mySquare=square.getLeft();
 		}	
+		if(mySquare==null){
+			System.out.println("ERROR no square for blastbeam");
+			return;
+		}
 		if(mySquare.hasStuff()){
         	blastRadius=1;
         	notRender=true;
-        	
         } else {
         	notRender=false;
         }

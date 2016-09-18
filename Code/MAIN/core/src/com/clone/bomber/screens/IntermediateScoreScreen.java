@@ -4,19 +4,13 @@ import java.util.ArrayList;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
-import com.badlogic.gdx.InputProcessor;
-import com.badlogic.gdx.Preferences;
-import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.FitViewport;
@@ -25,28 +19,24 @@ import com.clone.bomber.entity.Player;
 import com.clone.bomber.map.Map;
 import com.clone.bomber.map.MapManager;
 import com.clone.bomber.map.Square;
+import com.clone.bomber.util.MyScreen;
 import com.clone.bomber.util.MySound;
 
 
 
-public class IntermediateScoreScreen implements Screen, InputProcessor{
+public class IntermediateScoreScreen extends MyScreen {
 	private static final int PLAYER_TABLE_WIDTH=500;
 	private static final int TEAM_TABLE_WIDTH=250;
 	private static final int PLAYER_TABLE_HEIGHT=75;
 	private static final int MAX_PLAYER = 8;
 	
 	
-	
 	private boolean won;
-	private GameClass gameClass;
-	private SpriteBatch spriteBatch;
-	private OrthographicCamera camera;
-	private FitViewport viewPort;
+	
 	private OrthographicCamera mapCamera;
 	private FitViewport viewMapPort;
-	private Skin skin;
+	
 	private MapManager mapManager;
-	private Stage stage;
 	private Table[] playerTable;
 	private Table allTeamsTable;
 	private Table cupTable;
@@ -58,21 +48,13 @@ public class IntermediateScoreScreen implements Screen, InputProcessor{
 	private ArrayList<Player> players;
 	private Array<String> arraySelection;
 	private MySound mySound;
-	private Preferences prefs;
 	private Table allPlayerTable;
 	
-	
 	public IntermediateScoreScreen(GameClass gameClass){
-		this.gameClass=gameClass ;
-		spriteBatch = new SpriteBatch();
-		this.gameClass=gameClass;	
-		camera = new OrthographicCamera(GameClass.viewportWidth,
-				GameClass.viewportHeight);
-		camera.translate(new Vector3(GameClass.viewportWidth / 2,
-				GameClass.viewportHeight / 2, 0));
-		viewPort = new FitViewport(GameClass.viewportWidth,
-				GameClass.viewportHeight, camera);
-		viewPort.apply();	
+		this.gameClass=gameClass;		
+	}	
+	@Override
+	public void OnShow(){
 		mapCamera =new OrthographicCamera(GameClass.viewportWidth,
 				GameClass.viewportHeight);
 		mapCamera.translate(new Vector3(GameClass.viewportWidth / 2 +100,
@@ -84,10 +66,7 @@ public class IntermediateScoreScreen implements Screen, InputProcessor{
 		viewMapPort.getCamera().position.set(200,200,1.75f);
 		viewMapPort.getCamera().update();
 		
-	    skin = new Skin(Gdx.files.internal("res/gui/uiskin.json"));
 		mapManager=new MapManager();
-		stage = new Stage();
-		stage.setViewport(viewPort);
 		playerTable =new Table[MAX_PLAYER];
 		allTeamsTable=new Table(skin);
 		cupTable=new Table(skin);
@@ -96,26 +75,12 @@ public class IntermediateScoreScreen implements Screen, InputProcessor{
 		spawnSpot=map.getTexManager().getSpawnSpotTexture();
 		randomBox=map.getTexManager().getRandomBoxTexture();
 		teamTable=new Table[5];
-	}
-	
-	public void setInformation(ArrayList<Player> players, Array<String> arraySelection){
-		this.players=players;
-		if(arraySelection.size>1){
-			arraySelection.swap(0, arraySelection.size-1);
-		}
-		this.arraySelection=arraySelection;
-		map =  mapManager.loadMap(arraySelection.first());
-		map.load();
-	}
-	
-	@Override
-	public void show() {
+		
 		InputMultiplexer inputMultiplexer = new InputMultiplexer();
 		inputMultiplexer.addProcessor(this);
 		inputMultiplexer.addProcessor(stage);
 		Gdx.input.setInputProcessor(inputMultiplexer);
 		mySound= new MySound();
-		prefs = Gdx.app.getPreferences("clonebomber");
 		boolean enoughTeams=false;
 		int numberOfTeams=0;
 			int[] teams = new int[]{0,0,0,0,0};//size 5
@@ -219,7 +184,22 @@ public class IntermediateScoreScreen implements Screen, InputProcessor{
 			stage.addActor(allPlayerTable);
 		}
 			stage.setDebugAll(true);
+		
 	}
+	
+	public void setInformation(ArrayList<Player> players, Array<String> arraySelection){
+		this.players=players;
+		if(arraySelection.size>1){
+			arraySelection.swap(0, arraySelection.size-1);
+		}
+		this.arraySelection=arraySelection;
+		if(mapManager==null){
+			mapManager = new MapManager();
+		}
+		map =  mapManager.loadMap(arraySelection.first());
+		map.load();
+	}
+	
 	private void createPlayerTables(){
 		
 		for(int i = 0;i<players.size();i++){
@@ -240,7 +220,7 @@ public class IntermediateScoreScreen implements Screen, InputProcessor{
 					playerTable[i].row();
 				}
 				cupTable.add(new Image(new Texture("res/gui/cup.png"))).size(30, 30);
-				if(players.get(i).getWins()==prefs.getInteger("Wins")){
+				if(players.get(i).getWins()==Gdx.app.getPreferences("clonebomber").getInteger("Wins")){
 					this.won=true;
 					mySound.playWinSound();
 				}
@@ -270,32 +250,12 @@ public class IntermediateScoreScreen implements Screen, InputProcessor{
 		//then the stage && updating
 		stage.draw();
 		stage.act();
-		
-	}
-
-	@Override
-	public void resize(int width, int height) {
-		
-	}
-
-	@Override
-	public void pause() {
-		
-	}
-
-	@Override
-	public void resume() {
-		
-	}
-
-	@Override
-	public void hide() {
-		
 	}
 
 	@Override
 	public void dispose() {
 		map.dispose();
+		stage.dispose();
 	}
 
 	@Override

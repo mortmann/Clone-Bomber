@@ -54,7 +54,11 @@ public class MapManager {
 			FileHandle f = Gdx.files.local(path + selected + ".dat");
 			ObjectInputStream ois = null;
 			try{
-				ois = new ObjectInputStream(new FileInputStream(f.path()));
+//				if(f.exists()==false){
+//					return new Map(17);
+//				}
+				FileInputStream fis = new FileInputStream(f.path());
+				ois = new ObjectInputStream(fis);
 				map=(Map) ois.readObject();
 		        ois.close();
 		    }catch(Exception e){

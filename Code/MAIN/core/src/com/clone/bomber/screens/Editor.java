@@ -6,41 +6,30 @@ import java.io.IOException;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.InputMultiplexer;
-import com.badlogic.gdx.InputProcessor;
-import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.files.FileHandle;
-import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
-import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.List;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.clone.bomber.GameClass;
 import com.clone.bomber.map.Box;
 import com.clone.bomber.map.Map;
 import com.clone.bomber.map.MapManager;
 import com.clone.bomber.map.Square;
 import com.clone.bomber.map.Wall;
+import com.clone.bomber.util.MyScreen;
 
-public class Editor implements Screen, InputProcessor{
+public class Editor extends MyScreen {
 
-	private OrthographicCamera camera;
-	private FitViewport viewPort;
-	private Stage stage;
-	private Skin skin;
-	private SpriteBatch spriteBatch;
 	private Map map;
-	private GameClass gameClass;
 	private Square clickedSquare;
 	private ScrollPane mapObjectsScrollPane;
 	private List<String> listMapObject;
@@ -65,15 +54,10 @@ public class Editor implements Screen, InputProcessor{
 	
 	public Editor(GameClass gameClass) {
 		this.gameClass=gameClass;
-		camera = new OrthographicCamera(GameClass.viewportWidth,
-				GameClass.viewportHeight);
-		camera.translate(new Vector3(GameClass.viewportWidth / 2,
-				GameClass.viewportHeight / 2, 0));
-		viewPort = new FitViewport(GameClass.viewportWidth,
-				GameClass.viewportHeight, camera);
-		viewPort.apply();
-		stage = new Stage();
-		skin = new Skin(Gdx.files.internal("res/gui/uiskin.json"));
+	}
+	@Override
+	public void OnShow(){
+		OnShow();
 		listMapObject= new List<String>(skin);
 		listMapObject.setItems(objects);
 		mapObjectsScrollPane= new ScrollPane(listMapObject,skin);

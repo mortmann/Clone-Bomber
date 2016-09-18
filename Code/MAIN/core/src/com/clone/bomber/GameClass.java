@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.utils.Array;
 import com.clone.bomber.entity.Player;
@@ -33,7 +34,12 @@ public class GameClass extends Game{
     
 
      public void create() { 
-    	
+ 		Preferences prefs = Gdx.app.getPreferences("clonebomber");
+		Gdx.graphics.setDisplayMode(
+				prefs.getInteger("resWidth",GameClass.viewportWidth),
+				prefs.getInteger("resHeight",GameClass.viewportHeight),
+				prefs.getBoolean("fullscreen", false)
+		); 
     	net =new Network();
     	AliveChecker ac = new AliveChecker(Thread.currentThread(),net.getServer());
     	aliveC = new Thread(ac);

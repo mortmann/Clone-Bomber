@@ -10,7 +10,7 @@ public class DesktopLauncher {
 		config.height=720;
 		config.width=1280;
 		config.resizable = false;
-		config.foregroundFPS=10000;
+		config.foregroundFPS=60;
 		config.fullscreen = false;  
 		config.vSyncEnabled = false;
 		new LwjglApplication(new Bomber(), config);

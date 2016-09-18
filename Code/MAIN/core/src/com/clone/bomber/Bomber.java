@@ -17,14 +17,15 @@ public class Bomber extends ApplicationAdapter {
 	public void render () {
 		Gdx.gl.glClearColor(0, 0, 0, 0);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-		
+
 		if(gameClass==null){
 			gameClass = new GameClass();
 			gameClass.create();
 		}
 		try {
 			gameClass.render();
-		} catch (Exception e){
+		} 
+		catch (Exception e){
 			gameClass.getNet().closeServer();
 			try {
 				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());

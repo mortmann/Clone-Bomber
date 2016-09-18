@@ -8,7 +8,10 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
+import com.clone.bomber.map.Box;
 import com.clone.bomber.map.Square;
+import com.clone.bomber.map.Wall;
+import com.clone.bomber.util.Collideable;
 import com.clone.bomber.util.MyRectangle;
 import com.clone.bomber.util.MySound;
 
@@ -88,84 +91,22 @@ public class Bomb extends Entity{
 	public void update(float delta) {
 		stateTime+=delta;
 		explosionTimer-=delta;
-			if(!isFlying){
-				if(move.len()>0 && explosionTimer>0){
-					mySquare.setHasBomb(false, null);
-					mySquare = player.getSquare(this.hitbox);
-					mySquare.setHasBomb(true, this);
-				}
-				if((position.x+size/4-3<=mySquare.getCenter().x && position.x+size/4-2>=mySquare.getCenter().x) && (position.y+size/4-3<=mySquare.getCenter().y && position.y+size/4-2>=mySquare.getCenter().y)){	
-					int a =mySquare.getArrow();
-					if(a!=-1){
-						if(a==0){
-							this.move.set(0, 1);
-						} else 
-						if(a==1){
-							this.move.set(1, 0);
-						} else 
-						if(a==2){
-							this.move.set(0, -1);
-						} else 
-						if(a==3){
-							this.move.set(-1, 0);
-						}
-					}
-				}
-				if(explosionTimer<=0 && !isFlying && !mySquare.hasHole()){
-					if(beamTimer<=0){
-						this.dead=true;
-					}
-					if(beams==null){
-						mySound.playBombSound(2);
-						createBeams();
-						exploded=true;
-						player.addBeamHitboxes(this.getBeams());
-					}
-					for(int i=0;i<5;i++){
-						beams[i].update(delta);
-					}
-					this.mySquare.setHasBomb(false, null);
-					beamTimer-=delta;
-				}
-			}
-			if(mySquare.hasHole() && endSquare==null){
-				collidesWithWallWhileFlying=false;
-				this.hitbox.setSize(0);
-				size=0;
-				holeCooldown-=delta;
-				mySquare.setHasBomb(false, null);
-				if(holeCooldown<0f){
-					explosionTimer=0;
-					this.hitbox.setSize(mySquare.getSize());
-					size=mySquare.getSize();
-					holeCooldown=1f;
-					isFlying=true;
-					Square tempS = mySquare.getRandom(false);
-					while(tempS.isHasWall()){
-						tempS=mySquare.getRandom(false);
-					}
-					this.flyToSquare(tempS);
-				}
-			}	
+		StandingUpdate(delta);
+		FallIfSquareEmpty(delta);	
 			
-			if(this.mySquare.isEmpty() && !isFlying){
-				if(this.position.z>=1 &&!isFalling){
-					mySound.playFallSound();
-				}
-				if(this.position.z>0.1){
-					this.position.z-=this.position.z*this.position.z*9.81f*delta;
-					this.isFalling=true;
-				} else {
-					this.dead=true;
-				}
-			}	
-			if(!isFalling && beamTimer==2f){
-				this.position.x+=move.x*speed*delta;
-				this.position.y+=move.y*speed*delta;
-			}
+		if(!isFalling && beamTimer==2f){
+			this.position.x+=move.x*speed*delta;
+			this.position.y+=move.y*speed*delta;
+		}
 		
+		FlyingUpdate(delta);
+		
+		this.hitbox.setPosition(position.x,position.y);
+	}
+
+	private void FlyingUpdate(float delta) {
 		if(isFlying && endSquare!=null){
-			mySquare.setHasBomb(false, null);
+			mySquare.setHasBomb(null);
 			if(mySquare!=endSquare){
 				x=-Math.abs((mySquare.getPos().dst(position.x,position.y)))/mySquare.getSize();
 			} else {
@@ -176,8 +117,8 @@ public class Bomb extends Entity{
 			flySpeed =  (tempX2+b*x+(c));
 			this.position.z=flySpeed;
 			if(!(endSquare.getX()-2<position.x && endSquare.getX()+2>position.x&&  endSquare.getY()-2<position.y&& endSquare.getY()+2>position.y)){                      	
-				this.position.x+=1/flySpeed*move.x*speed*delta;
-				this.position.y+=1/flySpeed*move.y*speed*delta;
+				this.position.x+=1/flySpeed*(2*move.x)*speed*delta;
+				this.position.y+=1/flySpeed*(2*move.y)*speed*delta;
 			} else {
 				if(this.collidesWithWallWhileFlying){
 					if(endSquare.isHasBomb() && endSquare.getMyBomb()!=this){
@@ -216,7 +157,7 @@ public class Bomb extends Entity{
 						endSquare=null;
 					}
 					if(!mySquare.isHasBomb()){
-						mySquare.setHasBomb(true, this);
+						mySquare.setHasBomb(this);
 					}				
 
 				} else {			
@@ -230,9 +171,83 @@ public class Bomb extends Entity{
 				endSquare=null;
 				}
 			}
+		}		
+	}
+
+	private void FallIfSquareEmpty(float delta) {
+		if(this.mySquare.isEmpty() && !isFlying){
+			if(this.position.z>=1 &&!isFalling){
+				mySound.playFallSound();
+			}
+			if(this.position.z>0.1){
+				this.position.z-=this.position.z*this.position.z*9.81f*delta;
+				this.isFalling=true;
+			} else {
+				this.dead=true;
+			}
+		}			
+	}
+
+	private void StandingUpdate(float delta) {
+		if(!isFlying){
+			if(move.len()>0 && explosionTimer>0){
+				mySquare.setHasBomb(null);
+				mySquare = player.getSquare(this.hitbox);
+				mySquare.setHasBomb(this);
+			}
+			if((position.x+size/4-3<=mySquare.getCenter().x && position.x+size/4-2>=mySquare.getCenter().x) && (position.y+size/4-3<=mySquare.getCenter().y && position.y+size/4-2>=mySquare.getCenter().y)){	
+				int a =mySquare.getArrow();
+				if(a!=-1){
+					if(a==0){
+						this.move.set(0, 1);
+					} else 
+					if(a==1){
+						this.move.set(1, 0);
+					} else 
+					if(a==2){
+						this.move.set(0, -1);
+					} else 
+					if(a==3){
+						this.move.set(-1, 0);
+					}
+				}
+			}
+			if(explosionTimer<=0 && !isFlying && !mySquare.hasHole()){
+				if(beamTimer<=0){
+					this.dead=true;
+				}
+				if(beams==null){
+					mySound.playBombSound(2);
+					createBeams();
+					exploded=true;
+					player.addBeamHitboxes(this.getBeams());
+				}
+				for(int i=0;i<5;i++){
+					beams[i].update(delta);
+				}
+				this.mySquare.setHasBomb(null);
+				beamTimer-=delta;
+			}
 		}
-		
-		this.hitbox.setPosition(position.x,position.y);
+		if(mySquare.hasHole() && endSquare==null){
+			collidesWithWallWhileFlying=false;
+			this.hitbox.setSize(0);
+			size=0;
+			holeCooldown-=delta;
+			mySquare.setHasBomb(null);
+			if(holeCooldown<0f){
+				explosionTimer=0;
+				this.hitbox.setSize(mySquare.getSize());
+				size=mySquare.getSize();
+				holeCooldown=1f;
+				isFlying=true;
+				Square tempS = mySquare.getRandom(false);
+				while(tempS.isHasWall()){
+					tempS=mySquare.getRandom(false);
+				}
+				this.flyToSquare(tempS);
+			}
+		}			
 	}
 
 	private void createBeams() {
@@ -363,20 +378,20 @@ public class Bomb extends Entity{
 		this.isFlying = isFlying;
 	}
 
-	public void collides(String sName) {
+	public void collides(Collideable firstCheck) {
 		// decide what happens if it collides with anything but player
 		//if its flying only walls can stop it
 		//if not than decide what happen
 		if(!isFlying){
-			if(sName.contains("Box")){
+			if(firstCheck instanceof Box){
 				//stop move
 				this.stopMove(false,null);
-			} else if(sName.contains("Blastbeam")){
+			} else if(firstCheck instanceof Blastbeam){
 				//set the lifetime to a short delay
-				this.setLifetime(0.1f);
+				this.setLifetime(0.05f);
 			} 
 		} else {
-			if(sName.contains("Wall")){
+			if(firstCheck instanceof Wall){
 				this.stopMove(true,null);
 			}
 		}

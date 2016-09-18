@@ -14,7 +14,6 @@ public class Wall extends Collideable implements Serializable{
 	private static final long serialVersionUID = 7797158323384900998L;
 	private Square mySquare;
 	private transient Texture texture;
-	private boolean dead= false;
 	
 	public Wall(Square mySquare,Map map){
 		this.mySquare=mySquare;
@@ -32,9 +31,6 @@ public class Wall extends Collideable implements Serializable{
 			batch.draw(texture, mySquare.getX(), mySquare.getY(), mySquare.getSize(), mySquare.getSize());
 	}
 
-	public boolean isDead() {
-		return dead;
-	}
 	public Square getMySquare() {
 		return mySquare;
 	}

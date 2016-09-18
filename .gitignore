@@ -61,3 +61,11 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+*.bin
+*.lock
+Code/MAIN/core/.settings/org.eclipse.jdt.core.prefs
+Code/MAIN/desktop/Crashdump_1358271870_94.dump
+*.bin
+*.bin
+*.prefs
+*.lock
