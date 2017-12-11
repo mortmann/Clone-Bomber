@@ -342,7 +342,7 @@ public class Player extends Entity implements InputProcessor, ControllerListener
 			}
 			map.addPowerUps(powers);
 		}
-		
+		bomberGame.reducePlayerCount(); 
 		this.dead = dead;
 	}	
 
@@ -919,11 +919,13 @@ public class Player extends Entity implements InputProcessor, ControllerListener
 	/**
 	 * reset player informations that is only on one map important
 	 * ex. bombs, Square, etc
+	 * @param bomberGame 
 	 * 
 	 * @param square
 	 * @param map
 	 */
-	public void reset(Square square, Map map) {
+	public void reset(BomberGame bomberGame, Square square, Map map) {
+		this.bomberGame = bomberGame;
 		this.mySquare = square;
 		this.size=square.getSize();
 		beams=new ArrayList<Blastbeam>();

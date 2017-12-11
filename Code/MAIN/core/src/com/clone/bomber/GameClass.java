@@ -108,13 +108,11 @@ public class GameClass extends Game{
 		setScreen(optionsScreen);
 	}
 
-	public void setGame(boolean newRound ,Array<String> arraySelection, Integer playerNumber, ArrayList<Player> players) {
-		gameScreen=new BomberGame(newRound,this,players);
+	public void setGame(boolean newRound ,Array<String> arraySelection, int playerNumber, ArrayList<Player> players) {
+		gameScreen=new BomberGame(newRound,this,players,playerNumber,arraySelection);
 		if(newRound){
 			setupScreen.dispose();
 		}
-		gameScreen.setPlayerNumber(playerNumber);
-		gameScreen.setMap(arraySelection);
 		setScreen(gameScreen);
 	}
 	

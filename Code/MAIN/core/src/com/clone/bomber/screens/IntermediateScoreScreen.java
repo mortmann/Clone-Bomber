@@ -183,7 +183,7 @@ public class IntermediateScoreScreen extends MyScreen {
 			allPlayerTable.setBounds(x, y, PLAYER_TABLE_WIDTH, PLAYER_TABLE_HEIGHT*MAX_PLAYER);
 			stage.addActor(allPlayerTable);
 		}
-			stage.setDebugAll(true);
+//			stage.setDebugAll(true);
 		
 	}
 	

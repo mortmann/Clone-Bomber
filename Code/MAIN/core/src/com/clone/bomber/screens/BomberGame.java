@@ -1,6 +1,7 @@
 package com.clone.bomber.screens;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
@@ -17,6 +18,7 @@ import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Array;
@@ -46,7 +48,7 @@ public class BomberGame extends MyScreen {
 	//GAME
 	private ArrayList<Player> players;
 	private boolean paused=false;
-	private int playerNumber;
+	private int alivePlayerCount;
 	private Array<String> mapNames;
 	private float waitForScore = 3f;
 
@@ -65,15 +67,17 @@ public class BomberGame extends MyScreen {
 	private BitmapFont font;
 	private Table upgradesTabel;
 
+	Array<Controller> controllers = Controllers.getControllers();
 
-	public BomberGame(boolean newRound, GameClass gameClass, ArrayList<Player> players) {
+	public BomberGame(boolean newRound, GameClass gameClass, ArrayList<Player> players, int playerNumber,Array<String> maps) {
 		this.gameClass = gameClass;		
+		setMap(maps);
 		if(players==null){
 			this.players = new ArrayList<Player>();
 		} else {
 			this.players=players;
-			
 		}
+		alivePlayerCount = playerNumber;
 		playerApp=new ArrayList<Player>();
 		collideables = new ArrayList<Collideable>();
 		spriteBatch = new SpriteBatch();
@@ -82,6 +86,69 @@ public class BomberGame extends MyScreen {
 		this.newRound=newRound;
 		font = new BitmapFont(Gdx.files.internal("res/gui/november.fnt"));
 		font.setColor(Color.YELLOW);
+		CreatePlayer();
+		
+	}
+
+	private void CreatePlayer() {
+		waitForScore=3f;
+		map.load();
+		negativeEImage = new Image[8];
+		labels = new ArrayList<Label[]>();
+		for(int s = 0 ; s < 5; s ++ ){
+			labels.add(new Label[8]);
+		}
+		skin = new Skin(Gdx.files.internal("res/gui/uiskin.json"));		
+		for(Label[] ls : labels){
+			for (int i = 0; i < ls.length; i++) {
+				ls[i]=new Label("", skin);;
+			}
+		}
+		upgradesTabel = new Table(skin);
+		for(int i =0; i<alivePlayerCount;i++){
+			
+			upgradesTabel.setBounds(30,0, 240,720);
+			upgradesTabel.add("Player " + (i+1)).size(30).row();;
+			upgradesTabel.add(new Image(map.getTexManager().getPowerUp(PowerUPEffects.speed))).size(20);
+			upgradesTabel.add(labels.get(0)[i]).size(30);
+			upgradesTabel.add(new Image(map.getTexManager().getPowerUp(PowerUPEffects.blastradius))).size(20);
+			upgradesTabel.add(labels.get(1)[i]).size(30);
+			upgradesTabel.add(new Image(map.getTexManager().getPowerUp(PowerUPEffects.bomb))).size(20);
+			upgradesTabel.add(labels.get(2)[i]).size(30);
+			upgradesTabel.add(new Image(map.getTexManager().getPowerUp(PowerUPEffects.throwable))).size(20);
+			upgradesTabel.add(labels.get(3)[i]).size(30);
+			upgradesTabel.add(new Image(map.getTexManager().getPowerUp(PowerUPEffects.push))).size(20);
+			upgradesTabel.add(labels.get(4)[i]).size(30);
+			negativeEImage[i]=new Image();
+			upgradesTabel.add(negativeEImage[i]).size(20);
+			upgradesTabel.row();
+			if(players.size()<alivePlayerCount){
+				int[] keys = new int[5];			
+				Preferences prefs = Gdx.app.getPreferences("clonebomber");
+				String controls=prefs.getString("Player " + Integer.toString(i)+" Controls", "Tastatur");
+				keys[0]=prefs.getInteger("Player " + Integer.toString(i)+" UP", keys[0]);
+				keys[1]=prefs.getInteger("Player " + Integer.toString(i)+" DOWN", keys[1]);
+				keys[2]=prefs.getInteger("Player " + Integer.toString(i)+" RIGHT", keys[2]);
+				keys[3]=prefs.getInteger("Player " + Integer.toString(i)+" LEFT", keys[3]);
+				keys[4]=prefs.getInteger("Player " + Integer.toString(i)+" ACTION", keys[4]);
+				int team = prefs.getInteger("Player " + Integer.toString(i)+" Team", 0);
+				String charakter = prefs.getString("Player " + Integer.toString(i)+" Char");
+				players.add(new Player(map.getSpawnSpots().get(i),keys, map, controls, mySound,charakter,this,team));		
+				if(controls.contains("Controller") && controllers.size>0){
+					players.get(i).setController(controllers.first());
+					controllers.removeIndex(0);
+				} else if(controls.contains("App")){
+					playerApp.add(players.get(i));
+				}
+			}
+		}
+		for(int i =0; i < players.size() ;i++){
+			players.get(i).reset(this,map.getSpawnSpots().get(i),map);
+		}
+		System.out.println(players.size());
+		suddenDeath=new Suddendeath(map, mySound);
+
+
 	}
 
 	@Override
@@ -98,75 +165,11 @@ public class BomberGame extends MyScreen {
 		
 		//TODO OPTIONAL 
 		//TODO MAKE CORRECT DPAD NAME SHOWING? -> not really important
-		
-		
-		labels = new ArrayList<Label[]>();
-		for(int s = 0 ; s < 5; s ++ ){
-			labels.add(new Label[8]);
-		}
-		upgradesTabel = new Table(skin);
-		
-		upgradesTabel.setBounds(30,0, 240,720);
-		for(Label[] ls : labels){
-			for (int i = 0; i < ls.length; i++) {
-				ls[i]=new Label("", skin);;
-			}
-		}
-		negativeEImage = new Image[8];
-		Array<Controller> controllers = Controllers.getControllers();
-		if(paused==false){
-			waitForScore=3f;
-			map.load();
-			if(newRound){
-				for(int i =0; i<playerNumber;i++){
-					upgradesTabel.add("Player " + (i+1)).size(30).row();;
-					upgradesTabel.add(new Image(map.getTexManager().getPowerUp(PowerUPEffects.speed))).size(20);
-					upgradesTabel.add(labels.get(0)[i]).size(30);
-					upgradesTabel.add(new Image(map.getTexManager().getPowerUp(PowerUPEffects.blastradius))).size(20);
-					upgradesTabel.add(labels.get(1)[i]).size(30);
-					upgradesTabel.add(new Image(map.getTexManager().getPowerUp(PowerUPEffects.bomb))).size(20);
-					upgradesTabel.add(labels.get(2)[i]).size(30);
-					upgradesTabel.add(new Image(map.getTexManager().getPowerUp(PowerUPEffects.throwable))).size(20);
-					upgradesTabel.add(labels.get(3)[i]).size(30);
-					upgradesTabel.add(new Image(map.getTexManager().getPowerUp(PowerUPEffects.push))).size(20);
-					upgradesTabel.add(labels.get(4)[i]).size(30);
-					negativeEImage[i]=new Image();
-					upgradesTabel.add(negativeEImage[i]).size(20);
-					upgradesTabel.row();
-					 
-					int[] keys = new int[5];			
-					Preferences prefs = Gdx.app.getPreferences("clonebomber");
-					String controls=prefs.getString("Player " + Integer.toString(i)+" Controls", "Tastatur");
-					keys[0]=prefs.getInteger("Player " + Integer.toString(i)+" UP", keys[0]);
-					keys[1]=prefs.getInteger("Player " + Integer.toString(i)+" DOWN", keys[1]);
-					keys[2]=prefs.getInteger("Player " + Integer.toString(i)+" RIGHT", keys[2]);
-					keys[3]=prefs.getInteger("Player " + Integer.toString(i)+" LEFT", keys[3]);
-					keys[4]=prefs.getInteger("Player " + Integer.toString(i)+" ACTION", keys[4]);
-					int team = prefs.getInteger("Player " + Integer.toString(i)+" Team", 0);
-					String charakter = prefs.getString("Player " + Integer.toString(i)+" Char");
-					players.add(new Player(map.getSpawnSpots().get(i),keys, map, controls, mySound,charakter,this,team));		
-					if(controls.contains("Controller") && controllers.size>0){
-						players.get(i).setController(controllers.first());
-						controllers.removeIndex(0);
-					} else if(controls.contains("App")){
-
-						playerApp.add(players.get(i));
-					}
-				}
-			} else {
-				for(int i =0; i<playerNumber;i++){
-					players.get(i).reset(map.getSpawnSpots().get(i),map);
-				}
-			}
-			
-			suddenDeath=new Suddendeath(map, mySound);
-		}
-		
+		stage.addActor(upgradesTabel);
 		InputMultiplexer inputMultiplexer = new InputMultiplexer();
 		for (Player p : players) {
 			inputMultiplexer.addProcessor(p);
 		}
-		stage.addActor(upgradesTabel);
 		inputMultiplexer.addProcessor(this);
 		Gdx.input.setInputProcessor(inputMultiplexer);
 	}
@@ -182,7 +185,7 @@ public class BomberGame extends MyScreen {
 
 		
 		//update upgrades
-		for(int i =0; i<playerNumber;i++){
+		for(int i =0; i<alivePlayerCount;i++){
 			labels.get(0)[i].setText("x " + players.get(i).getSpeed());
 			labels.get(1)[i].setText("x " + players.get(i).getBlastRadiusUPs());
 			labels.get(2)[i].setText("x " + players.get(i).getBombUPs());
@@ -246,10 +249,23 @@ public class BomberGame extends MyScreen {
 //				}
 //			}
 		}
-		
-		if(playerNumber<=1){
+		boolean oneTeamsAlive=false;
+		int lastTeam = -1;
+		for(Player p : players){
+			if(p.isDead()==false){
+				if(lastTeam==-1){
+					lastTeam = p.getTeamNumber();
+					continue;
+				}
+				if(lastTeam == p.getTeamNumber()&&lastTeam!=0){
+					oneTeamsAlive = true;
+					break;
+				}
+			}
+		}
+		if(alivePlayerCount<=1||oneTeamsAlive){
 			waitForScore-=delta;	
-			if(waitForScore<=0f||playerNumber==0){
+			if(waitForScore<=0f||alivePlayerCount==0){
 				gameClass.setScoreScreen(players, mapNames);
 			}
 		}
@@ -385,7 +401,6 @@ public class BomberGame extends MyScreen {
 		if(checkWith instanceof Box) {
 			((Box)checkWith).explode();
 		} else if(checkWith instanceof Player) {
-			playerNumber--;
 			((Player)checkWith).setDead(true);
 		} else if(checkWith instanceof Bomb) {
 			((Bomb)checkWith).collides(firstCheck);
@@ -432,6 +447,7 @@ public class BomberGame extends MyScreen {
 		MapManager mapManager = new MapManager();
 		this.mapNames=arraySelection;
 		this.map=mapManager.loadMap(arraySelection.first());
+		map.load();
 	}
 
 	public Square getSquare(MyRectangle hitbox) {
@@ -451,16 +467,16 @@ public class BomberGame extends MyScreen {
 	
 	
 	public int getPlayerNumber() {
-		return playerNumber;
-	}
-
-	public void setPlayerNumber(int playerNumber) {
-		this.playerNumber = playerNumber;
+		return alivePlayerCount;
 	}
 
 	public void setShake(boolean shake) {
 		this.currentMagnitude=1.75f;
 		this.shake = shake;
+	}
+
+	public void reducePlayerCount() {
+		alivePlayerCount--;
 	}
 
 }
