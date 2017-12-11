@@ -49,6 +49,9 @@ public class Bomber extends ApplicationAdapter {
 			if(e.getCause()!=null){
 				file.writeString(e.getCause().toString(), true);
 			}
+			file.writeString(e.getLocalizedMessage(), true);
+			file.writeString(e.getClass().getName(), true);
+			file.writeString(e.toString(), true);
 			file.writeString(stracktrace, true);
 			file.writeString(e.getMessage(), true);
 			
